@@ -1,0 +1,661 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>時計 · Clock</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@300;400;700&family=Noto+Sans+JP:wght@100;300&display=swap');
+
+  :root {
+    --ink: #0a0a0f;
+    --paper: #f5f0e8;
+    --red: #c0392b;
+    --gold: #c9a84c;
+    --jade: #2d6a4f;
+    --silver: #8899aa;
+    --glow: rgba(201,168,76,0.18);
+    --opacity: 0.97;
+    --accent: #c0392b;
+    --theme-bg: #0a0a0f;
+    --theme-fg: #f5f0e8;
+    --theme-dim: rgba(245,240,232,0.18);
+    --theme-accent: #c0392b;
+    --theme-gold: #c9a84c;
+    --theme-border: rgba(201,168,76,0.25);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html, body {
+    width: 100%; height: 100%;
+    min-height: 100vh;
+    font-family: 'Noto Serif JP', serif;
+    user-select: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  #root {
+    width: 240px;
+    height: 240px;
+    flex-shrink: 0;
+    position: relative;
+    background: var(--theme-bg);
+    opacity: var(--opacity);
+    overflow: hidden;
+    transition: opacity 0.3s;
+  }
+
+  /* ── NOISE TEXTURE overlay ── */
+  #root::before {
+    content: '';
+    position: absolute; inset: 0; z-index: 0;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+    pointer-events: none;
+  }
+
+  /* ── CORNER SEALS ── */
+  .seal {
+    position: absolute; z-index: 1;
+    font-family: 'Noto Serif JP', serif;
+    font-size: 8px;
+    color: var(--theme-accent);
+    opacity: 0.45;
+    line-height: 1;
+  }
+  .seal-tl { top: 6px; left: 6px; }
+  .seal-tr { top: 6px; right: 6px; text-align: right; }
+  .seal-bl { bottom: 6px; left: 6px; }
+  .seal-br { bottom: 6px; right: 6px; text-align: right; }
+
+  /* ── THIN BORDER FRAME ── */
+  #frame {
+    position: absolute; inset: 14px; z-index: 1;
+    border: 1px solid var(--theme-border);
+    pointer-events: none;
+  }
+  #frame::before, #frame::after {
+    content: '';
+    position: absolute;
+    border-color: var(--theme-gold);
+    border-style: solid;
+    opacity: 0.5;
+  }
+  #frame::before {
+    top: -4px; left: -4px; right: -4px; bottom: -4px;
+    border-width: 1px;
+  }
+  #frame::after {
+    top: 3px; left: 3px; right: 3px; bottom: 3px;
+    border-width: 0.5px;
+    opacity: 0.2;
+  }
+
+  /* ── CLOCK AREA ── */
+  #clock-wrap {
+    position: absolute; inset: 0; z-index: 2;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+  }
+
+  /* ── DIGITAL CLOCK ── */
+  #digital {
+    display: flex; flex-direction: column; align-items: center; gap: 4px;
+  }
+  #time-display {
+    font-family: 'Noto Sans JP', sans-serif;
+    font-weight: 100;
+    font-size: 42px;
+    letter-spacing: 2px;
+    color: var(--theme-fg);
+    text-shadow: 0 0 20px var(--glow), 0 0 40px var(--glow);
+    line-height: 1;
+  }
+  #date-display {
+    font-family: 'Noto Serif JP', serif;
+    font-size: 9px;
+    font-weight: 300;
+    letter-spacing: 3px;
+    color: var(--theme-gold);
+    opacity: 0.8;
+    text-transform: uppercase;
+  }
+  #kanji-time {
+    font-family: 'Noto Serif JP', serif;
+    font-size: 11px;
+    font-weight: 300;
+    color: var(--theme-fg);
+    opacity: 0.4;
+    letter-spacing: 2px;
+    margin-top: 2px;
+  }
+  #weekday-cjk {
+    font-family: 'Noto Serif JP', serif;
+    font-size: 9px;
+    color: var(--theme-accent);
+    opacity: 0.7;
+    letter-spacing: 2px;
+  }
+
+  /* ── ANALOG CLOCK ── */
+  #analog { display: none; }
+  #analog-svg { filter: drop-shadow(0 0 8px var(--glow)); }
+
+  /* SVG analog parts */
+  .dial-bg { fill: none; }
+  .dial-ring { fill: none; stroke: var(--theme-border); stroke-width: 1; }
+  .dial-ring-outer { fill: none; stroke: var(--theme-gold); stroke-width: 0.5; opacity: 0.4; }
+  .tick-major { stroke: var(--theme-fg); stroke-width: 1.2; opacity: 0.7; }
+  .tick-minor { stroke: var(--theme-fg); stroke-width: 0.5; opacity: 0.25; }
+  .hand-hour { stroke: var(--theme-fg); stroke-width: 2.5; stroke-linecap: round; }
+  .hand-min  { stroke: var(--theme-fg); stroke-width: 1.5; stroke-linecap: round; }
+  .hand-sec  { stroke: var(--theme-accent); stroke-width: 0.8; stroke-linecap: round; }
+  .center-dot { fill: var(--theme-accent); }
+  .center-ring { fill: none; stroke: var(--theme-gold); stroke-width: 0.8; opacity: 0.6; }
+
+  /* Kanji hour markers */
+  .kanji-hour {
+    font-family: 'Noto Serif JP', serif;
+    font-size: 7px;
+    fill: var(--theme-gold);
+    opacity: 0.6;
+    dominant-baseline: central;
+    text-anchor: middle;
+  }
+
+  /* ── BOTTOM INFO BAR (analog mode) ── */
+  #analog-date {
+    font-family: 'Noto Serif JP', serif;
+    font-size: 8px;
+    color: var(--theme-gold);
+    letter-spacing: 3px;
+    opacity: 0.7;
+    margin-top: 4px;
+  }
+
+  /* ── SETTINGS PANEL ── */
+  #settings-btn {
+    position: absolute; bottom: 18px; right: 18px; z-index: 10;
+    width: 16px; height: 16px;
+    cursor: pointer; opacity: 0.3;
+    transition: opacity 0.2s;
+    color: var(--theme-fg);
+    font-size: 12px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  #settings-btn:hover { opacity: 0.9; }
+
+  #settings-panel {
+    position: absolute; inset: 0; z-index: 20;
+    background: var(--theme-bg);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.25s;
+    display: flex; flex-direction: column;
+    padding: 20px 18px 14px;
+    gap: 0;
+  }
+  #settings-panel.open {
+    opacity: 0.97;
+    pointer-events: all;
+  }
+
+  .sp-header {
+    display: flex; align-items: center; justify-content: center;
+    position: relative; margin-bottom: 12px;
+  }
+  .sp-x {
+    position: absolute; right: 0; top: 50%; transform: translateY(-50%);
+    font-size: 14px; line-height: 1;
+    color: var(--theme-fg); opacity: 0.45;
+    cursor: pointer; transition: opacity 0.2s;
+    font-family: sans-serif;
+  }
+  .sp-x:hover { opacity: 1; color: var(--theme-accent); }
+  .sp-title {
+    font-family: 'Noto Serif JP', serif;
+    font-size: 10px;
+    letter-spacing: 4px;
+    color: var(--theme-gold);
+    text-align: center;
+    opacity: 0.9;
+  }
+  .sp-kanji {
+    font-size: 8px;
+    opacity: 0.4;
+    display: block;
+    letter-spacing: 2px;
+    margin-top: 1px;
+  }
+
+  .sp-row {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 6px 0;
+    border-bottom: 1px solid var(--theme-border);
+  }
+  .sp-label {
+    font-family: 'Noto Serif JP', serif;
+    font-size: 8px;
+    color: var(--theme-fg);
+    opacity: 0.7;
+    letter-spacing: 1.5px;
+  }
+  .sp-label span {
+    display: block;
+    font-size: 7px;
+    color: var(--theme-gold);
+    opacity: 0.5;
+    margin-top: 1px;
+  }
+
+  /* Toggle */
+  .toggle {
+    width: 32px; height: 16px;
+    background: var(--theme-dim);
+    border: 1px solid var(--theme-border);
+    border-radius: 8px;
+    position: relative; cursor: pointer;
+    transition: background 0.2s;
+    flex-shrink: 0;
+  }
+  .toggle.on { background: var(--theme-accent); border-color: var(--theme-accent); }
+  .toggle::after {
+    content: '';
+    position: absolute; top: 2px; left: 2px;
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    background: var(--theme-fg);
+    transition: transform 0.2s;
+  }
+  .toggle.on::after { transform: translateX(16px); }
+
+  /* Slider */
+  .sp-slider {
+    -webkit-appearance: none; appearance: none;
+    width: 90px; height: 2px;
+    background: var(--theme-dim);
+    outline: none; border-radius: 1px;
+    cursor: pointer;
+  }
+  .sp-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    background: var(--theme-gold);
+    cursor: pointer;
+  }
+
+  /* Select */
+  .sp-select {
+    background: transparent;
+    border: 1px solid var(--theme-border);
+    color: var(--theme-fg);
+    font-family: 'Noto Serif JP', serif;
+    font-size: 7px;
+    letter-spacing: 1px;
+    padding: 2px 4px;
+    cursor: pointer;
+    outline: none;
+    -webkit-appearance: none;
+    width: 80px;
+    text-align: center;
+  }
+  .sp-select option { background: #0a0a0f; color: #f5f0e8; }
+
+  .sp-close {
+    margin-top: auto;
+    text-align: center;
+    font-family: 'Noto Serif JP', serif;
+    font-size: 8px;
+    letter-spacing: 3px;
+    color: var(--theme-fg);
+    opacity: 0.4;
+    cursor: pointer;
+    padding-top: 10px;
+    transition: opacity 0.2s;
+  }
+  .sp-close:hover { opacity: 0.9; }
+
+  /* ── SWEEP ANIMATION for second hand ── */
+  @keyframes pulse-center {
+    0%, 100% { r: 2.5; opacity: 1; }
+    50% { r: 3.5; opacity: 0.6; }
+  }
+
+  /* ── THEMES ── */
+  body.theme-ink {
+    --theme-bg: #08080d;
+    --theme-fg: #e8e0d0;
+    --theme-dim: rgba(232,224,208,0.12);
+    --theme-accent: #c0392b;
+    --theme-gold: #c9a84c;
+    --theme-border: rgba(201,168,76,0.22);
+    --glow: rgba(201,168,76,0.15);
+  }
+  body.theme-jade {
+    --theme-bg: #081510;
+    --theme-fg: #c8e6c9;
+    --theme-dim: rgba(200,230,201,0.12);
+    --theme-accent: #66bb6a;
+    --theme-gold: #a5d6a7;
+    --theme-border: rgba(102,187,106,0.22);
+    --glow: rgba(102,187,106,0.15);
+  }
+  body.theme-sakura {
+    --theme-bg: #1a0a10;
+    --theme-fg: #f8d7da;
+    --theme-dim: rgba(248,215,218,0.1);
+    --theme-accent: #e91e63;
+    --theme-gold: #f48fb1;
+    --theme-border: rgba(233,30,99,0.22);
+    --glow: rgba(233,30,99,0.15);
+  }
+  body.theme-snow {
+    --theme-bg: #f0ede8;
+    --theme-fg: #1a1a2e;
+    --theme-dim: rgba(26,26,46,0.1);
+    --theme-accent: #c0392b;
+    --theme-gold: #8b6914;
+    --theme-border: rgba(139,105,20,0.25);
+    --glow: rgba(139,105,20,0.12);
+  }
+  body.theme-moon {
+    --theme-bg: #0d0d1a;
+    --theme-fg: #d4d4ff;
+    --theme-dim: rgba(212,212,255,0.1);
+    --theme-accent: #7986cb;
+    --theme-gold: #9fa8da;
+    --theme-border: rgba(121,134,203,0.25);
+    --glow: rgba(121,134,203,0.2);
+  }
+
+  /* Dynamic bg gradient based on time — subtle */
+  #bg-glow {
+    position: absolute; inset: 0; z-index: 0;
+    background: radial-gradient(ellipse at 50% 40%, var(--glow) 0%, transparent 70%);
+    pointer-events: none;
+    transition: background 2s;
+  }
+
+  /* Make everything draggable by default */
+  html, body, #root, #clock-wrap, .seal, #frame, #digital, 
+  #time-display, #date-display, #kanji-time, #weekday-cjk, 
+  #analog, #analog-svg, #analog-date {
+    -webkit-app-region: drag;
+  }
+
+  /* Only make interactive elements non-draggable */
+  #settings-btn, #settings-panel, #settings-x, #settings-close,
+  .sp-select, .sp-slider, .toggle, #opt-mode, #opt-theme, 
+  #opt-opacity, #opt-seconds, #opt-kanji, #opt-24h, #opt-kanjiDial,
+  input, select {
+    -webkit-app-region: no-drag;
+  }
+</style>
+</head>
+<body class="theme-ink">
+
+<div id="root">
+  <div id="bg-glow"></div>
+
+  <!-- Corner seals -->
+  <div class="seal seal-tl">時</div>
+  <div class="seal seal-tr">刻</div>
+  <div class="seal seal-bl">日</div>
+  <div class="seal seal-br">月</div>
+
+  <!-- Border frame -->
+  <div id="frame"></div>
+
+  <!-- Clock content -->
+  <div id="clock-wrap">
+
+    <!-- Digital -->
+    <div id="digital">
+      <div id="time-display">00:00</div>
+      <div id="date-display">MON · JAN 01</div>
+      <div id="kanji-time">零時零分</div>
+      <div id="weekday-cjk">月曜日</div>
+    </div>
+
+    <!-- Analog -->
+    <div id="analog">
+      <svg id="analog-svg" width="168" height="168" viewBox="0 0 168 168">
+        <defs>
+          <radialGradient id="dialGrad" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stop-color="var(--theme-dim)" stop-opacity="0.3"/>
+            <stop offset="100%" stop-color="transparent"/>
+          </radialGradient>
+        </defs>
+        <circle class="dial-bg" cx="84" cy="84" r="80" fill="url(#dialGrad)"/>
+        <circle class="dial-ring-outer" cx="84" cy="84" r="80"/>
+        <circle class="dial-ring" cx="84" cy="84" r="75"/>
+
+        <!-- Ticks & kanji labels rendered by JS -->
+        <g id="ticks"></g>
+        <g id="kanji-labels"></g>
+
+        <!-- Hands -->
+        <line id="hand-hour" class="hand-hour" x1="84" y1="84" x2="84" y2="42"/>
+        <line id="hand-min"  class="hand-min"  x1="84" y1="84" x2="84" y2="28"/>
+        <line id="hand-sec"  class="hand-sec"  x1="84" y1="94" x2="84" y2="22"/>
+
+        <!-- Center -->
+        <circle class="center-ring" cx="84" cy="84" r="5"/>
+        <circle class="center-dot" cx="84" cy="84" r="2.5"/>
+      </svg>
+      <div id="analog-date"></div>
+    </div>
+  </div>
+
+  <!-- Settings gear -->
+  <div id="settings-btn" title="設定">⚙</div>
+
+  <!-- Settings Panel -->
+  <div id="settings-panel">
+    <div class="sp-header">
+      <div class="sp-title">設 定<span class="sp-kanji">SETTINGS</span></div>
+      <div class="sp-x" id="settings-x">✕</div>
+    </div>
+
+    <div class="sp-row">
+      <div class="sp-label">MODE<span>モード</span></div>
+      <select class="sp-select" id="opt-mode">
+        <option value="digital">DIGITAL · 数字</option>
+
+      </select>
+    </div>
+
+    <div class="sp-row">
+      <div class="sp-label">THEME<span>テーマ</span></div>
+      <select class="sp-select" id="opt-theme">
+        <option value="ink">INK · 墨</option>
+        <option value="jade">JADE · 玉</option>
+        <option value="sakura">SAKURA · 桜</option>
+        <option value="snow">SNOW · 雪</option>
+        <option value="moon">MOON · 月</option>
+      </select>
+    </div>
+
+    <div class="sp-row">
+      <div class="sp-label">OPACITY<span>透明度</span></div>
+      <input type="range" class="sp-slider" id="opt-opacity" min="15" max="100" value="97">
+    </div>
+
+    <div class="sp-row">
+      <div class="sp-label">SECONDS<span>秒針表示</span></div>
+      <div class="toggle on" id="opt-seconds"></div>
+    </div>
+
+    <div class="sp-row">
+      <div class="sp-label">KANJI<span>漢字表示</span></div>
+      <div class="toggle on" id="opt-kanji"></div>
+    </div>
+
+    <div class="sp-row">
+      <div class="sp-label">24H FORMAT<span>二十四時</span></div>
+      <div class="toggle" id="opt-24h"></div>
+    </div>
+
+    <div class="sp-row">
+      <div class="sp-label">KANJI DIAL<span>漢数字</span></div>
+      <div class="toggle on" id="opt-kanjiDial"></div>
+    </div>
+
+    <div class="sp-close" id="settings-close">閉 じ る · CLOSE</div>
+  </div>
+</div>
+
+<script>
+// ── CONFIG ──────────────────────────────────
+const cfg = {
+  mode: 'digital',
+  theme: 'ink',
+  opacity: 0.97,
+  showSeconds: true,
+  showKanji: true,
+  use24h: false,
+  kanjiDial: true,
+};
+
+// ── KANJI DIGITS ────────────────────────────
+const kanjiNum = ['〇','一','二','三','四','五','六','七','八','九','十',
+  '十一','十二','十三','十四','十五','十六','十七','十八','十九','二十',
+  '二十一','二十二','二十三','二十四','二十五','二十六','二十七','二十八','二十九',
+  '三十','三十一','三十二','三十三','三十四','三十五','三十六','三十七','三十八','三十九',
+  '四十','四十一','四十二','四十三','四十四','四十五','四十六','四十七','四十八','四十九',
+  '五十','五十一','五十二','五十三','五十四','五十五','五十六','五十七','五十八','五十九'];
+
+const weekdayJP = ['日曜日','月曜日','火曜日','水曜日','木曜日','金曜日','土曜日'];
+const monthEN   = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
+const weekEN    = ['SUN','MON','TUE','WED','THU','FRI','SAT'];
+const kanjiHour = ['十二','一','二','三','四','五','六','七','八','九','十','十一'];
+
+// ── ANALOG TICKS ────────────────────────────
+function buildTicks() {
+  const g = document.getElementById('ticks');
+  const gl = document.getElementById('kanji-labels');
+  g.innerHTML = ''; gl.innerHTML = '';
+  const cx = 84, cy = 84, r = 75;
+
+  for (let i = 0; i < 60; i++) {
+    const a = (i / 60) * 2 * Math.PI - Math.PI / 2;
+    const isMajor = i % 5 === 0;
+    const len = isMajor ? 8 : 4;
+    const r1 = r, r2 = r - len;
+    const x1 = cx + r1 * Math.cos(a), y1 = cy + r1 * Math.sin(a);
+    const x2 = cx + r2 * Math.cos(a), y2 = cy + r2 * Math.sin(a);
+    const line = document.createElementNS('http://www.w3.org/2000/svg','line');
+    line.setAttribute('x1', x1); line.setAttribute('y1', y1);
+    line.setAttribute('x2', x2); line.setAttribute('y2', y2);
+    line.setAttribute('class', isMajor ? 'tick-major' : 'tick-minor');
+    g.appendChild(line);
+
+    if (isMajor) {
+      const hr = i / 5 === 0 ? 12 : i / 5;
+      const lr = r - 18;
+      const tx = cx + lr * Math.cos(a), ty = cy + lr * Math.sin(a);
+      const txt = document.createElementNS('http://www.w3.org/2000/svg','text');
+      txt.setAttribute('x', tx); txt.setAttribute('y', ty);
+      txt.setAttribute('class','kanji-hour');
+      txt.textContent = cfg.kanjiDial ? kanjiHour[i/5] : hr;
+      gl.appendChild(txt);
+    }
+  }
+}
+
+// ── CLOCK UPDATE ────────────────────────────
+function updateClock() {
+  const now = new Date();
+  const h = now.getHours(), m = now.getMinutes(), s = now.getSeconds();
+  const ms = now.getMilliseconds();
+
+  let hDisp = cfg.use24h ? h : (h % 12 || 12);
+  const pad = n => String(n).padStart(2,'0');
+  let timeStr = `${pad(hDisp)}:${pad(m)}`;
+  if (cfg.showSeconds) timeStr += `:${pad(s)}`;
+  document.getElementById('time-display').textContent = timeStr;
+
+  const day = now.getDate();
+  document.getElementById('date-display').textContent =
+    `${weekEN[now.getDay()]} · ${monthEN[now.getMonth()]} ${pad(day)}`;
+
+  if (cfg.showKanji) {
+    document.getElementById('kanji-time').style.display = '';
+    document.getElementById('weekday-cjk').style.display = '';
+    document.getElementById('kanji-time').textContent =
+      kanjiNum[h] + '時' + kanjiNum[m] + '分' + (cfg.showSeconds ? kanjiNum[s]+'秒' : '');
+    document.getElementById('weekday-cjk').textContent = weekdayJP[now.getDay()];
+  } else {
+    document.getElementById('kanji-time').style.display = 'none';
+    document.getElementById('weekday-cjk').style.display = 'none';
+  }
+}
+
+function setHand(id, cx, cy, angle, len, tail) {
+  const el = document.getElementById(id);
+  const rad = (angle - 90) * Math.PI / 180;
+  const x2 = cx + len * Math.cos(rad);
+  const y2 = cy + len * Math.sin(rad);
+  const xt = cx + tail * Math.cos(rad);
+  const yt = cy + tail * Math.sin(rad);
+  el.setAttribute('x1', xt); el.setAttribute('y1', yt);
+  el.setAttribute('x2', x2); el.setAttribute('y2', y2);
+}
+
+// ── MODE SWITCH ─────────────────────────────
+function applyMode() {
+  const isDigital = cfg.mode === 'digital';
+  document.getElementById('digital').style.display = isDigital ? '' : 'none';
+  if (!isDigital) buildTicks();
+}
+
+// ── SETTINGS ────────────────────────────────
+const settingsBtn   = document.getElementById('settings-btn');
+const settingsPanel = document.getElementById('settings-panel');
+const settingsClose = document.getElementById('settings-close');
+
+settingsBtn.addEventListener('click', () => settingsPanel.classList.add('open'));
+settingsClose.addEventListener('click', () => settingsPanel.classList.remove('open'));
+document.getElementById('settings-x').addEventListener('click', () => settingsPanel.classList.remove('open'));
+
+// Mode
+document.getElementById('opt-mode').addEventListener('change', e => {
+  cfg.mode = e.target.value; applyMode();
+});
+
+// Theme
+document.getElementById('opt-theme').addEventListener('change', e => {
+  cfg.theme = e.target.value;
+  document.body.className = `theme-${cfg.theme}`;
+});
+
+// Opacity
+document.getElementById('opt-opacity').addEventListener('input', e => {
+  cfg.opacity = e.target.value / 100;
+  document.getElementById('root').style.opacity = cfg.opacity;
+});
+
+// Toggles
+function bindToggle(id, key, onchange) {
+  const el = document.getElementById(id);
+  el.addEventListener('click', () => {
+    cfg[key] = !cfg[key];
+    el.classList.toggle('on', cfg[key]);
+    if (onchange) onchange();
+  });
+}
+bindToggle('opt-seconds', 'showSeconds');
+bindToggle('opt-kanji',   'showKanji');
+bindToggle('opt-24h',     'use24h');
+bindToggle('opt-kanjiDial', 'kanjiDial', buildTicks);
+
+// ── INIT ────────────────────────────────────
+applyMode();
+updateClock();
+setInterval(updateClock, 250);
+</script>
+</body>
+</html>

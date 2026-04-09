@@ -3,6 +3,7 @@ use std::io::{Read, Write};
 use std::net::{TcpListener, TcpStream};
 use std::path::Path;
 use std::thread;
+use tauri::Manager;
 
 #[tauri::command]
 fn greet(name: &str) -> String {
@@ -201,6 +202,16 @@ fn handle_request(mut stream: TcpStream, root_dir: &str) {
     }
 }
 
+fn find_available_port() -> u16 {
+    for port in 3030..65535 {
+        if let Ok(listener) = TcpListener::bind(format!("127.0.0.1:{}", port)) {
+            drop(listener);
+            return port;
+        }
+    }
+    3030
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     // Start file server from app directory
@@ -210,14 +221,26 @@ pub fn run() {
         .unwrap_or_else(|| std::path::PathBuf::from("."));
     let src_dir = app_dir.join("src");
     
+    let port = find_available_port();
+    eprintln!("Found available port: {}", port);
+    
     if src_dir.exists() {
-        start_file_server(3030, src_dir.to_string_lossy().as_ref());
+        start_file_server(port, src_dir.to_string_lossy().as_ref());
         thread::sleep(std::time::Duration::from_millis(50));
     }
+
+    let url = format!("http://localhost:{}", port);
+    eprintln!("Loading app from: {}", url);
 
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
         .invoke_handler(tauri::generate_handler![greet])
+        .setup(move |app| {
+            if let Some(window) = app.get_webview_window("main") {
+                let _ = window.navigate(tauri::Url::parse(&url).unwrap());
+            }
+            Ok(())
+        })
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
