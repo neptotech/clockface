@@ -1,0 +1,254 @@
+:root {
+  --scale: 1;
+  --panel-opacity: 0.38;
+  --panel-blur: 10px;
+  --panel-radius: 18px;
+  --text: #ffffff;
+  --accent: #7dd3fc;
+
+  --shadow: 0 12px 44px rgba(0, 0, 0, 0.42);
+
+  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Inter,
+    Roboto, Arial, sans-serif;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  -webkit-text-size-adjust: 100%;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  background: transparent;
+  color: var(--text);
+  overflow: hidden;
+}
+
+/* B key: toggle solid black background so window borders are visible for resizing */
+body.bg-visible {
+  background: #000 !important;
+}
+
+.app {
+  height: 100%;
+  width: 100%;
+  display: grid;
+  place-items: center;
+  -webkit-app-region: drag;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.widget {
+  position: relative;
+  display: grid;
+  place-items: center;
+}
+
+/* Scale wrapper is separate from .panel so the blur pseudo-element isn't
+   trapped inside a transform stacking context. */
+.panel-scaler {
+  transform: scale(var(--scale));
+}
+
+.panel {
+  position: relative;
+  isolation: isolate;
+  padding: 14px 18px;
+  border-radius: var(--panel-radius);
+  background: transparent;
+  box-shadow: var(--shadow);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  text-align: center;
+}
+
+/* Blurred background — filter: blur() works on transparent Tauri windows;
+   backdrop-filter does not (nothing behind the window to sample). */
+.panel::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  background: rgba(12, 16, 22, var(--panel-opacity));
+  filter: blur(var(--panel-blur));
+}
+
+/* ── Digital face ────────────────────────────────────────── */
+
+.clock-digital {
+  display: block;
+}
+
+.time {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
+  font-weight: 650;
+  font-size: 44px;
+  line-height: 1;
+  text-shadow: 0 2px 18px rgba(0, 0, 0, 0.55);
+}
+
+/* ── Analog face ─────────────────────────────────────────── */
+
+.clock-analog {
+  display: none;
+  width: 140px;
+  height: 140px;
+}
+
+.widget.analog .clock-digital {
+  display: none;
+}
+
+.widget.analog .clock-analog {
+  display: block;
+}
+
+/* ── Shared date line ────────────────────────────────────── */
+
+.date {
+  margin-top: 6px;
+  font-size: 12px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  opacity: 0.82;
+}
+
+/* ── Settings gear (auto-hides) ──────────────────────────── */
+
+.settings-toggle {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 28px;
+  height: 28px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text);
+  cursor: pointer;
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.25);
+  -webkit-app-region: no-drag;
+  opacity: 0;
+  transform: scale(0.96);
+  pointer-events: none;
+  transition: opacity 140ms ease, transform 140ms ease;
+}
+
+.widget:hover .settings-toggle,
+.widget:focus-within .settings-toggle,
+.widget.settings-open .settings-toggle {
+  opacity: 1;
+  transform: scale(1);
+  pointer-events: auto;
+}
+
+.settings-toggle:hover {
+  border-color: rgba(125, 211, 252, 0.55);
+}
+
+/* ── Settings panel ──────────────────────────────────────── */
+
+.settings {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: min(340px, calc(100vw - 20px));
+  max-height: calc(100vh - 20px);
+  overflow: auto;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(12, 16, 22, 0.7);
+  box-shadow: var(--shadow);
+  -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(16px);
+  padding: 12px;
+  -webkit-app-region: no-drag;
+}
+
+.settings-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 6px 6px 10px 6px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.settings-title {
+  font-weight: 650;
+  letter-spacing: 0.02em;
+}
+
+.icon-btn {
+  width: 34px;
+  height: 34px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text);
+  cursor: pointer;
+}
+
+.settings-grid {
+  padding: 10px 6px 6px 6px;
+  display: grid;
+  gap: 10px;
+}
+
+.settings .row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 13px;
+  opacity: 0.95;
+}
+
+.settings input[type="range"] {
+  width: 160px;
+}
+
+.settings input[type="color"] {
+  width: 44px;
+  height: 28px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.actions button {
+  border-radius: 12px;
+  border: 1px solid rgba(125, 211, 252, 0.35);
+  background: rgba(125, 211, 252, 0.14);
+  color: var(--text);
+  padding: 8px 10px;
+  cursor: pointer;
+}
+
+.actions button:hover {
+  border-color: rgba(125, 211, 252, 0.7);
+}
+
+.hint {
+  margin: 8px 6px 0 6px;
+  font-size: 12px;
+  opacity: 0.72;
+}

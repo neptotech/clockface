@@ -1,0 +1,6 @@
+# Reduces peak RAM usage during Rust builds (helpful on low-memory systems)
+# by limiting parallel compilation and stripping heavy debug info.
+
+[build]
+jobs = 1
+rustflags = ["-C", "debuginfo=0"]
