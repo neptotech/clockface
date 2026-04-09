@@ -49,6 +49,47 @@ function applyTheme(settings) {
   root.style.setProperty("--accent", settings.accent);
 }
 
+// Setup credit tooltip hover
+function setupCreditTooltip() {
+  const widget = document.getElementById("widget");
+  const clockDigital = document.getElementById("clockDigital");
+  const clockAnalog = document.getElementById("clockAnalog");
+  const creditTooltip = document.getElementById("creditTooltip");
+
+  if (!creditTooltip) return;
+
+  // Show on clock hover
+  clockDigital.addEventListener("mouseenter", () => {
+    creditTooltip.style.opacity = "1";
+  });
+
+  clockAnalog.addEventListener("mouseenter", () => {
+    creditTooltip.style.opacity = "1";
+  });
+
+  // Hide on clock leave (but keep showing if hovering tooltip)
+  clockDigital.addEventListener("mouseleave", (e) => {
+    if (!creditTooltip.contains(e.relatedTarget)) {
+      creditTooltip.style.opacity = "0";
+    }
+  });
+
+  clockAnalog.addEventListener("mouseleave", (e) => {
+    if (!creditTooltip.contains(e.relatedTarget)) {
+      creditTooltip.style.opacity = "0";
+    }
+  });
+
+  // Keep showing if hovering over tooltip
+  creditTooltip.addEventListener("mouseenter", () => {
+    creditTooltip.style.opacity = "1";
+  });
+
+  creditTooltip.addEventListener("mouseleave", () => {
+    creditTooltip.style.opacity = "0";
+  });
+}
+
 function formatTime(now, settings) {
   return new Intl.DateTimeFormat(undefined, {
     hour: "2-digit",
@@ -337,4 +378,5 @@ window.addEventListener("DOMContentLoaded", () => {
   applyAnalogMode();
   render();
   if (!settings.analog) scheduleTick();
+  setupCreditTooltip();
 });

@@ -13,15 +13,14 @@
         "title": "Clockface",
         "width": 240,
         "height": 240,
-        "minWidth": 100,
-        "minHeight": 100,
+        "minWidth": 90,
+        "minHeight": 90,
         "resizable": true,
         "decorations": false,
         "transparent": true,
         "alwaysOnTop": true,
         "skipTaskbar": true,
-        "shadow": false,
-        "url": "http://localhost:3030"
+        "shadow": false
       }
     ],
     "security": {

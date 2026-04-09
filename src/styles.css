@@ -252,3 +252,43 @@ body.bg-visible {
   font-size: 12px;
   opacity: 0.72;
 }
+
+/* ── Credit tooltip ──────────────────────────────────────── */
+
+.credit-tooltip {
+  position: absolute;
+  bottom: 5px;
+  left: 5px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px 12px;
+  border-radius: 20px;
+  background: rgba(97, 97, 97, 0.15);
+  border: 1px solid rgba(95, 95, 95, 0.35);
+  font-size: 11px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 200ms ease;
+  -webkit-app-region: no-drag;
+  backdrop-filter: blur(8px);
+  text-align: center;
+  white-space: nowrap;
+}
+
+.credit-tooltip a {
+  color: var(--accent);
+  text-decoration: none;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.credit-tooltip a:hover {
+  text-decoration: underline;
+}
+
+.widget:hover .credit-tooltip,
+#clockAnalog:hover ~ .credit-tooltip {
+  opacity: 1;
+  pointer-events: auto;
+}
