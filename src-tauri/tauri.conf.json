@@ -21,7 +21,7 @@
         "alwaysOnTop": true,
         "skipTaskbar": true,
         "shadow": false,
-        "url": "http://localhost:3030"
+        "url": "about:blank"
       }
     ],
     "security": {

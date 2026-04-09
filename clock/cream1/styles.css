@@ -1,0 +1,332 @@
+:root {
+  --scale: 1;
+  --panel-opacity: 0.3;
+  --panel-blur: 8px;
+  --panel-radius: 20px;
+  --text: #2c1810;
+  --accent: #c41e3a;
+
+  --shadow: 0 8px 32px rgba(44, 24, 16, 0.25);
+
+  font-family: 'Noto Sans CJK SC', 'Microsoft YaHei', 'SimHei', ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  -webkit-text-size-adjust: 100%;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  background: transparent;
+  color: var(--text);
+  overflow: hidden;
+}
+
+/* B key: toggle solid black background so window borders are visible for resizing */
+body.bg-visible {
+  background: #1a1a1a !important;
+}
+
+.app {
+  height: 100%;
+  width: 100%;
+  display: grid;
+  place-items: center;
+  -webkit-app-region: drag;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.widget {
+  position: relative;
+  display: grid;
+  place-items: center;
+}
+
+/* Scale wrapper is separate from .panel so the blur pseudo-element isn't
+   trapped inside a transform stacking context. */
+.panel-scaler {
+  transform: scale(var(--scale));
+  position: relative;
+}
+
+/* Paint splash canvas - behind panel */
+.splash-canvas {
+  position: absolute;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.15;
+  filter: blur(1px);
+}
+
+.panel {
+  position: relative;
+  isolation: isolate;
+  padding: 20px 24px;
+  border-radius: var(--panel-radius);
+  background: transparent;
+  box-shadow: var(--shadow);
+  border: 2px solid rgba(44, 24, 16, 0.2);
+  text-align: center;
+  z-index: 1;
+}
+
+/* Blurred background with traditional paper texture */
+.panel::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  background: linear-gradient(135deg, rgba(242, 235, 225, var(--panel-opacity)), rgba(255, 248, 240, var(--panel-opacity)));
+  filter: blur(var(--panel-blur));
+  backdrop-filter: blur(var(--panel-blur));
+}
+
+/* Ink seal decorations */
+.ink-seal {
+  position: absolute;
+  width: 60px;
+  height: 60px;
+  opacity: 0.25;
+  pointer-events: none;
+}
+
+.ink-seal::before {
+  content: '';
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  border: 3px solid var(--accent);
+  border-radius: 4px;
+  transform: rotate(45deg);
+}
+
+.top-seal {
+  top: -30px;
+  right: -30px;
+}
+
+.bottom-seal {
+  bottom: -30px;
+  left: -30px;
+}
+
+/* ── Digital face ────────────────────────────────────────── */
+
+.clock-digital {
+  display: block;
+  margin-bottom: 8px;
+}
+
+.time {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.05em;
+  font-weight: 700;
+  font-size: 52px;
+  line-height: 1;
+  color: var(--text);
+  font-family: 'Courier Prime', 'Courier New', monospace;
+  text-shadow: 3px 3px 0px rgba(44, 24, 16, 0.08);
+  transform: skewY(-1deg);
+}
+
+/* Chinese characters styling */
+.time::before {
+  content: '·';
+  margin: 0 2px;
+}
+
+/* ── Analog face ─────────────────────────────────────────── */
+
+.clock-analog {
+  display: none;
+  width: 140px;
+  height: 140px;
+  margin: 12px 0;
+}
+
+.widget.analog .clock-digital {
+  display: none;
+}
+
+.widget.analog .clock-analog {
+  display: block;
+}
+
+/* ── Shared date line ────────────────────────────────────── */
+
+.date {
+  margin-top: 12px;
+  font-size: 13px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  opacity: 0.75;
+  color: var(--accent);
+  font-weight: 600;
+  text-shadow: 1px 1px 2px rgba(196, 30, 58, 0.1);
+}
+
+/* ── Settings gear (auto-hides) ──────────────────────────── */
+
+.settings-toggle {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: 2px solid rgba(44, 24, 16, 0.15);
+  background: rgba(242, 235, 225, 0.4);
+  color: var(--text);
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(44, 24, 16, 0.12);
+  -webkit-app-region: no-drag;
+  opacity: 0;
+  transform: scale(0.92) rotate(-15deg);
+  pointer-events: none;
+  transition: opacity 160ms ease, transform 160ms ease;
+  font-size: 16px;
+}
+
+.widget:hover .settings-toggle,
+.widget:focus-within .settings-toggle,
+.widget.settings-open .settings-toggle {
+  opacity: 1;
+  transform: scale(1) rotate(0deg);
+  pointer-events: auto;
+}
+
+.settings-toggle:hover {
+  border-color: var(--accent);
+  background: rgba(196, 30, 58, 0.1);
+  box-shadow: 0 6px 16px rgba(196, 30, 58, 0.15);
+}
+
+/* ── Settings panel ──────────────────────────────────────── */
+
+.settings {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: min(360px, calc(100vw - 20px));
+  max-height: calc(100vh - 20px);
+  overflow: auto;
+  border-radius: 16px;
+  border: 2px solid rgba(44, 24, 16, 0.2);
+  background: linear-gradient(135deg, rgba(242, 235, 225, 0.75), rgba(255, 248, 240, 0.75));
+  box-shadow: 0 12px 40px rgba(44, 24, 16, 0.3);
+  -webkit-backdrop-filter: blur(20px);
+  backdrop-filter: blur(20px);
+  padding: 16px;
+  -webkit-app-region: no-drag;
+}
+
+.settings-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 8px 12px 8px;
+  border-bottom: 2px solid rgba(196, 30, 58, 0.15);
+}
+
+.settings-title {
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  color: var(--text);
+  font-size: 15px;
+}
+
+.icon-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  border: 1px solid rgba(44, 24, 16, 0.15);
+  background: rgba(196, 30, 58, 0.08);
+  color: var(--text);
+  cursor: pointer;
+  transition: all 140ms ease;
+  font-size: 18px;
+}
+
+.icon-btn:hover {
+  border-color: var(--accent);
+  background: rgba(196, 30, 58, 0.15);
+}
+
+.settings-grid {
+  padding: 12px 8px 8px 8px;
+  display: grid;
+  gap: 11px;
+}
+
+.settings .row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 13px;
+  opacity: 0.95;
+  color: var(--text);
+}
+
+.settings input[type="range"] {
+  width: 160px;
+  accent-color: var(--accent);
+}
+
+.settings input[type="checkbox"] {
+  accent-color: var(--accent);
+}
+
+.settings input[type="color"] {
+  width: 44px;
+  height: 28px;
+  padding: 2px;
+  border: 1px solid rgba(44, 24, 16, 0.2);
+  background: transparent;
+  cursor: pointer;
+  border-radius: 6px;
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 12px;
+}
+
+.actions button {
+  border-radius: 8px;
+  border: 1px solid rgba(196, 30, 58, 0.3);
+  background: rgba(196, 30, 58, 0.12);
+  color: var(--text);
+  padding: 8px 12px;
+  cursor: pointer;
+  transition: all 140ms ease;
+  font-weight: 600;
+}
+
+.actions button:hover {
+  border-color: var(--accent);
+  background: rgba(196, 30, 58, 0.2);
+}
+
+.hint {
+  margin: 10px 8px 0 8px;
+  font-size: 12px;
+  opacity: 0.7;
+  color: rgba(44, 24, 16, 0.6);
+  font-style: italic;
+}

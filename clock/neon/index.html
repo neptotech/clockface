@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="stylesheet" href="styles.css" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Neon Clockface</title>
+    <script type="module" src="/main.js" defer></script>
+  </head>
+
+  <body>
+    <main id="app" class="app" aria-label="Clock overlay">
+      <div id="widget" class="widget" aria-label="Clock widget">
+        <div class="panel-scaler">
+        <section class="panel" aria-label="Clock face">
+
+          <div class="clock-digital" id="clockDigital">
+            <div class="time" id="time" aria-label="Time">--:--</div>
+          </div>
+
+          <canvas
+            class="clock-analog"
+            id="clockAnalog"
+            width="280"
+            height="280"
+            aria-label="Analog clock"
+          ></canvas>
+
+          <div class="date" id="date" aria-label="Date"></div>
+
+          <button
+            id="settingsToggle"
+            class="settings-toggle"
+            type="button"
+            aria-label="Open settings"
+            title="Settings (Ctrl+,)"
+          >⚙</button>
+        </section>
+        </div>
+
+        <section id="settings" class="settings" aria-label="Settings" hidden>
+          <header class="settings-header">
+            <div class="settings-title">Neon Clockface</div>
+            <button id="closeSettings" class="icon-btn" type="button" aria-label="Close settings">✕</button>
+          </header>
+
+          <div class="settings-grid">
+
+            <label class="row">
+              <span>Analog clock</span>
+              <input id="optAnalog" type="checkbox" />
+            </label>
+
+            <label class="row">
+              <span>24-hour format</span>
+              <input id="opt24h" type="checkbox" />
+            </label>
+
+            <label class="row">
+              <span>Show seconds</span>
+              <input id="optSeconds" type="checkbox" checked />
+            </label>
+
+            <label class="row">
+              <span>Show date</span>
+              <input id="optDate" type="checkbox" checked />
+            </label>
+
+            <label class="row">
+              <span>Scale</span>
+              <input id="optScale" type="range" min="0.5" max="2.5" step="0.1" value="0.9" />
+            </label>
+
+            <label class="row">
+              <span>Opacity</span>
+              <input id="optOpacity" type="range" min="0" max="1" step="0.05" value="0.25" />
+            </label>
+
+            <label class="row">
+              <span>Blur</span>
+              <input id="optBlur" type="range" min="0" max="30" step="1" value="12" />
+            </label>
+
+            <label class="row">
+              <span>Corner radius</span>
+              <input id="optCornerRadius" type="range" min="0" max="120" step="1" value="24" />
+            </label>
+
+            <label class="row">
+              <span>Text color</span>
+              <input id="optText" type="color" value="#00ffff" />
+            </label>
+
+            <label class="row">
+              <span>Accent color</span>
+              <input id="optAccent" type="color" value="#ff0080" />
+            </label>
+
+          </div>
+
+          <div class="actions">
+            <button id="reset" type="button">Reset</button>
+          </div>
+
+          <div class="hint">Changes are saved automatically.</div>
+
+        </section>
+      </div>
+    </main>
+  </body>
+</html>

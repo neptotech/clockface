@@ -3,7 +3,9 @@
 Always-on-top, transparent clock overlay built with Tauri + vanilla HTML/CSS/JS Very light weight compared to others with great UI customisability.  
 
 ![](example.gif)
-This version supports custom clock faces! all you need is to modify the src folder near the exe. and Can use your own ai generated clocks.  
+This version supports custom clock faces! all you need is to modify the src folder near the exe. and Can use your own ai generated clocks.   
+![alt text](image.png)![alt text](image-1.png)  
+- [clock](./clock/) folder in this repo contains these custom clocks.. they should replace the src folder contents in the unzipped directory..  
 **Pro tip:** You can run calculator,or any ui that runs in your local host with this.
 
 The previous further lighter version having only default clock is available as well named clockface v1 exe in release.
